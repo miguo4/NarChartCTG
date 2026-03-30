@@ -20,40 +20,6 @@ input_text = "Describe this chart in detail.\n"
 
 
 
-  
-
-def intent_based_chart_inference(self):
-    # 初始化引擎
-    engine = ChartGemmaIntentEngine()
-    
-    # 加载图表图像
-    # chart_image = engine.load_chart_image(image_path)
-    chart_image = engine.config.CHART_IMAGE_PATH
-    intent_recipes = engine.config.intent_recipes()
-    # 批量执行意图推理
-    results = {}
-    for idx, recipe in enumerate(intent_recipes):
-        print(f"\n🔍 执行意图 {idx+1}：{recipe['action']}")
-        print(f"📋 意图详情：{recipe}")
-        print("-" * 50)
-        result = engine.generate_intent_based_inference(chart_image, recipe)
-        results[f"intent_{idx+1}"] = result
-        print(f"✅ 生成结果：{result}\n")
-
-    return results
-
-
-
-
-if __name__ == "__main__":
-    # -------------------------- 执行推理 --------------------------
-        inference_results = intent_based_chart_inference()
-        print("\n" + "="*80)
-        print("📊 最终推理结果汇总（适配 Intentable 风格）")
-        print("="*80)
-        for intent_name, result in inference_results.items():
-            print(f"\n🎯 {intent_name}：\n{result}")
-
 
 # ====================== 1. 核心配置 ======================
 class ChartGemmaIntentConfig:
@@ -118,7 +84,7 @@ class ChartGemmaIntentEngine:
 
        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
        self.model = self.model.to(self.device)
-       print("✅ Load Model成功：")
+    #    print("✅ Load Model成功：")
        
     def load_chart_image(self, image_path_or_url):
         """加载图表图像（支持本地路径/URL）"""
@@ -151,7 +117,10 @@ class ChartGemmaIntentEngine:
         target_key = intent_recipe.get("targets", [{}])[0].get("key", "") if intent_recipe.get("targets") else ""
         target_series = intent_recipe.get("targets", [{}])[0].get("series", "") if intent_recipe.get("targets") else ""
         target_keys = ", ".join([t["key"] for t in intent_recipe.get("targets", [])]) if intent_recipe.get("targets") else ""
-
+        
+        print("-" * 50)
+        print(f"核心推理函数\n")
+        print("意图模板prompt_template",prompt_template,) 
         # 填充模板（处理可选字段）
         prompt = prompt_template.format(
             target_key=target_key,
@@ -162,18 +131,57 @@ class ChartGemmaIntentEngine:
             target2_series=intent_recipe.get("targets", [{}])[1].get("series", "") if len(intent_recipe.get("targets", [])) > 1 else "",
             target_keys=target_keys
         )    
-
+        print("意图生成：",prompt) 
+        print(f"\n")
         # Process Inputs
-        inputs = self.processor(text= prompt, images=chart_image, return_tensors="pt")
+        inputs = self.processor(text= input_text, images=chart_image, return_tensors="pt")
         inputs["pixel_values"] = inputs["pixel_values"].to(self.model.dtype)# # ✅ 关键修复：把输入转成和型一样的半精
         prompt_length = inputs['input_ids'].shape[1]
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        print("✅ Process Inputs成功：")
+        # print("✅ Process Inputs成功：")
 
         # Generate
         generate_ids = self.model.generate(**inputs, num_beams=4, max_new_tokens=512)
         output_text = self.processor.batch_decode(generate_ids[:, prompt_length:], skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-        print("✅ Generate")
-        print(output_text)
+        # print("✅ Generate")
+        # print(output_text)
 
-        return result    
+        return output_text    
+
+
+
+
+
+
+  
+
+def intent_based_chart_inference():
+    # 初始化引擎
+    engine = ChartGemmaIntentEngine()
+    
+    # 加载图表图像
+    image_path = engine.config.CHART_IMAGE_PATH
+    chart_image = engine.load_chart_image(image_path)
+    intent_recipes = engine.config.intent_recipes
+    # 批量执行意图推理
+    results = {}
+    for idx, recipe in enumerate(intent_recipes):
+        result = engine.generate_intent_based_inference(chart_image, recipe)
+        results[f"intent_{idx+1}"] = result
+        print(f"\n🔍 执行意图 {idx+1}：{recipe['action']}")
+        print(f"📋 意图详情：{recipe}")
+        print(f"✅ 生成结果：{result}\n")
+
+    return results
+
+
+
+
+if __name__ == "__main__":
+    # -------------------------- 执行推理 --------------------------
+        inference_results = intent_based_chart_inference()
+        print("\n" + "="*80)
+        print("📊 最终推理结果汇总（适配 Intentable 风格）")
+        print("="*80)
+        for intent_name, result in inference_results.items():
+            print(f"\n🎯 {intent_name}：\n{result}")
