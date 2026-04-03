@@ -8,8 +8,7 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["TORCH_USE_CUDA_DSA"] = "1"
 # torch.hub.download_url_to_file('https://raw.githubusercontent.com/vis-nlp/ChartQA/main/ChartQA%20Dataset/val/png/multi_col_1229.png', 'chart_example_1.png')
 
-# image_path = "./content/chart_example_1.png"
-image_path = "./content/nar_chart.png"
+
 # input_text ="program of thought: what is the sum of Faceboob Messnger and Whatsapp values in the 18-29 age group?"
 input_text = "Describe this chart in detail.\n"  
 # input_text ="Analyze this chart carefully.\n"  
@@ -20,30 +19,38 @@ input_text = "Describe this chart in detail.\n"
 
 
 
+# -------------------------- 示例1： --------------------------
+prompt_str = '''Task: Generate a concise, factual description strictly based only on the given chart data. 
+Hard Constraints: 1. Do NOT hallucinate any additional categories, trends, comparisons or values. 
+2. Use only the exact key and value provided without modification. 
+3. Output only one complete, objective sentence containing following keywords data:\"Public\",\"3.5 K\".  
+4. No extra explanation, no formatting, no speculation. '''
 
 # ====================== 1. 核心配置 ======================
 class ChartGemmaIntentConfig:
     # 意图驱动提示词模板（适配 Intentable Recipe）
     INTENT_PROMPT_TEMPLATES = {
-        "overview": "Based on the chart image, provide a concise overview of the key data trends and totals. Follow the Intentable overview intent: summarize the overall picture with core values and chart type.",
-        "describe": "Based on the chart image, describe the specific data point for the category '{target_key}' (series: {target_series} if applicable). Follow the Intentable describe intent: state the exact value and label clearly.",
+        # "overview": "Based on the chart image, provide a concise overview of the key data trends and totals. Follow the Intentable overview intent: summarize the overall picture with core values and chart type.",
+        # "describe": "Based on the chart image, describe the specific data point for the category '{target_key}' (series: {target_series} if applicable). Follow the Intentable describe intent: state the exact value and label clearly.",
         # "compare": "Based on the chart image, compare the two data points: {target1_key} (series: {target1_series}) vs {target2_key} (series: {target2_series} if applicable). Follow the Intentable compare intent: calculate and state the difference and percentage change.",
         # "trend": "Based on the chart image, analyze the trend of the series '{target_series}' over the categories {target_keys}. Follow the Intentable trend intent: describe if the trend is increasing, decreasing, or fluctuating, and note key inflection points."
+    "overview":prompt_str,
+    "describe":prompt_str
     }
     # -------------------------- 示例1：本地图表图像 --------------------------
-    CHART_IMAGE_PATH = "./content/nar_chart.png" 
+    CHART_IMAGE_PATH = "../../content/nar_chart.png" 
     # 模拟 Intentable 的 Recipe 结构，覆盖四大核心意图
     intent_recipes = [
         # 意图1：概览（Overview）
         {
             "action": "overview",
-            "chart_type": "bar",
-            "unit": "survival time"
+            # "chart_type": "bar",
+            # "unit": "survival time"
         },
         # 意图2：描述（Describe）- 提取2023年的数值
         {
             "action": "describe",
-            "targets": [{"key": "Public", "series": "3.5 K"}]
+            # "targets": [{"key": "Public", "series": "3.5 K"}]
         },
         # 意图3：对比（Compare）- 对比2022和2023年Product A
         # {
@@ -67,7 +74,7 @@ class ChartGemmaIntentConfig:
 class ChartGemmaIntentEngine:
     def __init__(self):
        self.config = ChartGemmaIntentConfig() 
-       LOCAL_MODEL_DIR = "./chartgemma"
+       LOCAL_MODEL_DIR = "../../chartgemma"
         # 加载本地模型 + 处理器
        self.model = PaliGemmaForConditionalGeneration.from_pretrained(
             LOCAL_MODEL_DIR,
@@ -120,17 +127,19 @@ class ChartGemmaIntentEngine:
         
         print("-" * 50)
         print(f"核心推理函数\n")
-        print("意图模板prompt_template",prompt_template,) 
+        print("意图模板prompt_template：",prompt_template,) 
         # 填充模板（处理可选字段）
-        prompt = prompt_template.format(
-            target_key=target_key,
-            target_series=target_series,
-            target1_key=target_key,
-            target1_series=target_series,
-            target2_key=intent_recipe.get("targets", [{}])[1].get("key", "") if len(intent_recipe.get("targets", [])) > 1 else "",
-            target2_series=intent_recipe.get("targets", [{}])[1].get("series", "") if len(intent_recipe.get("targets", [])) > 1 else "",
-            target_keys=target_keys
-        )    
+        # prompt = prompt_template.format(
+        #     target_key=target_key,
+        #     target_series=target_series,
+        #     target1_key=target_key,
+        #     target1_series=target_series,
+        #     target2_key=intent_recipe.get("targets", [{}])[1].get("key", "") if len(intent_recipe.get("targets", [])) > 1 else "",
+        #     target2_series=intent_recipe.get("targets", [{}])[1].get("series", "") if len(intent_recipe.get("targets", [])) > 1 else "",
+        #     target_keys=target_keys
+        # )
+
+        prompt   =  prompt_template
         print("意图生成：",prompt) 
         print(f"\n")
         # Process Inputs

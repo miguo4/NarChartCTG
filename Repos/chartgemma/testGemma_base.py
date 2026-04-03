@@ -9,7 +9,7 @@ os.environ["TORCH_USE_CUDA_DSA"] = "1"
 # torch.hub.download_url_to_file('https://raw.githubusercontent.com/vis-nlp/ChartQA/main/ChartQA%20Dataset/val/png/multi_col_1229.png', 'chart_example_1.png')
 
 # image_path = "./content/chart_example_1.png"
-image_path = "./content/nar_chart.png"
+image_path = "../../content/nar_chart.png"
 # input_text ="program of thought: what is the sum of Faceboob Messnger and Whatsapp values in the 18-29 age group?"
 input_text = "Describe this chart in detail.\n"  
 # input_text ="Analyze this chart carefully.\n"  
@@ -18,7 +18,7 @@ input_text = "Describe this chart in detail.\n"
 # model = PaliGemmaForConditionalGeneration.from_pretrained("ahmed-masry/chartgemma", torch_dtype=torch.float16)
 # processor = AutoProcessor.from_pretrained("ahmed-masry/chartgemma")
 
-LOCAL_MODEL_DIR = "./chartgemma"
+LOCAL_MODEL_DIR = "../../chartgemma"
 # 加载本地模型 + 处理器
 model = PaliGemmaForConditionalGeneration.from_pretrained(
     LOCAL_MODEL_DIR,
